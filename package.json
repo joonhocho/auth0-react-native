@@ -39,5 +39,9 @@
     "babel-preset-stage-0": "^6.5.0",
     "chai": "^3.5.0",
     "mocha": "^2.4.5"
+  },
+  "dependencies": {
+    "jwt-node-decoder": "0.0.3",
+    "qs": "^6.1.0"
   }
 }
