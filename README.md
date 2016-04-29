@@ -8,6 +8,17 @@ It has not been tested yet on React Native. Currently, 60% of unit tests are pas
 So don't create an issue, but rather create a PR for me! Thanks!
 
 
+### How it differs from [node-auth0](https://github.com/auth0/node-auth0) and [auth0.js](https://github.com/auth0/auth0.js).
+`node-auth0` is for node.js, but it lacks client APIs such as `signup`, `login`, `renewIdToken`, `getDelegationToken`, ...
+Because, it assumes you are a server, not a client.
+
+`auth0.js` supports client APIs, but is for a browser environment. It depends on browser specific variables such as `window`, `navigator`, `popup`, ...
+
+`auth0-react-native` is for React Native Apps, (can easily configured to support Node.js as well since both share very similar environments).
+
+Note that since it is not for a browser, it does not support any popup related APIs and cross-origin related parameters.
+
+
 ### Install
 ```
 npm install --save auth0-react-native
