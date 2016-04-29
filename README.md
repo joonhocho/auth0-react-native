@@ -3,9 +3,9 @@ React Native (possibly Node.js) port of [auth0/auth0.js](https://github.com/auth
 
 
 ### It's currently WORK IN PROGRESS
-It has not been tested yet. Only 60% of unit tests are passing.
+It has not been tested yet on React Native. Currently, 60% of unit tests are passing.
 
-So don't create an issue saying that it does not work, but rather create a PR for me! Thanks!
+So don't create an issue, but rather create a PR for me! Thanks!
 
 
 ### Install
