@@ -20,116 +20,141 @@ var xhrSupportPrefix = xhrSupport ? '' : 'not ';
  */
 
 describe('Auth0 - Passwordless', function () {
-  afterEach(function () {
-    this.server.restore();
-  });
-
+  let domain;
+  let clientID;
+  let auth0;
+  let server;
+  let email;
+  let phoneNumber;
+  let fetchSaved;
+  let response;
+  let error;
+  let fetchUrl;
+  let fetchOptions;
   beforeEach(function () {
-    this.domain = 'aaa.auth0.com';
-    this.clientID = 'aaaabcdefgh';
-    this.auth0 = new Auth0({
-      domain: this.domain,
-      clientID: this.clientID,
+    domain = 'aaa.auth0.com';
+    clientID = 'aaaabcdefgh';
+    auth0 = new Auth0({
+      domain,
+      clientID,
     });
-    this.server = sinon.fakeServer.create();
-    this.email = 'foo@bar.com';
-    this.phoneNumber = '+5491122334455';
+    server = sinon.fakeServer.create();
+    email = 'foo@bar.com';
+    phoneNumber = '+5491122334455';
+    fetchSaved = global.fetch;
+    global.fetch = (url, options) => new Promise((resolve, reject) => {
+      fetchUrl = url;
+      fetchOptions = options;
+      if (response) resolve(response);
+      else if (error) reject(error);
+    });
   });
 
-  describe('.startPasswordless()', function () {
+  afterEach(function () {
+    server.restore();
+    fetchUrl = null;
+    fetchOptions = null;
+    fetchSaved = global.fetch;
+    response = null;
+    error = null;
+  });
+
+  describe.only('.startPasswordless()', function () {
     it('should throw if no arguments are passed', function () {
-      var auth0 = this.auth0;
       expect(function () {
         auth0.startPasswordless();
       }).to.throwError('An options object is required');
     });
 
     it('should throw if no options are passed', function () {
-      var auth0 = this.auth0;
       expect(function () {
-        auth0.startPasswordless(undefined, function() {});
+        auth0.startPasswordless(undefined);
       }).to.throwError('An options object is required');
     });
 
-    it('should throw if no callback is passed', function () {
-      var auth0 = this.auth0;
-      var email = this.email;
-      expect(function () {
-        auth0.startPasswordless({ email: email });
-      }).to.throwError('A callback function is required');
-    });
-
     it('should throw if options has no property email or phoneNumber', function () {
-      var auth0 = this.auth0;
       expect(function () {
-        auth0.startPasswordless({}, function() {});
+        auth0.startPasswordless({});
       }).to.throwError('email is required.');
     });
 
     describe('sending an email successfully (xhr ' + xhrSupportPrefix + ' supported)', function() {
       beforeEach(function() {
-        this.server.respondWith('POST', 'https://' + this.domain + '/passwordless/start', [
+        response = {
+          status: 200,
+          json: () => Promise.resolve({
+            _id: '5b7bb4',
+            email,
+          }),
+        };
+        /*
+        server.respondWith('POST', 'https://' + domain + '/passwordless/start', [
           200,
           { 'Content-Type': 'application/json' },
-          '{"_id":"5b7bb4","email":"' + this.email + '"}'
+          '{"_id":"5b7bb4","email":"' + email + '"}'
         ]);
+        */
       });
 
       it('should send the expected parameters', function (done) {
         // TODO test JSONP request
         if (!xhrSupport) return done();
-        this.auth0.startPasswordless({ email: this.email }, function (err) {
-          expect(err).to.be(null);
-          done();
-        });
-
-        var requestData = parseRequestBody(this.server.requests[0]);
-        expect(requestData.client_id).to.be(this.clientID);
-        expect(requestData.email).to.be(this.email);
-        expect(requestData.connection).to.be('email');
-        this.server.respond();
+        auth0.startPasswordless({ email: email })
+          .then(() => {
+            expect(fetchUrl).to.equal('https://' + domain + '/passwordless/start');
+            expect(fetchOptions.method).to.equal('POST');
+            const data = JSON.parse(fetchOptions.body);
+            expect(data.client_id).to.equal(clientID);
+            expect(data.email).to.equal(email);
+            expect(data.connection).to.equal('email');
+            done();
+          }, done);
       });
 
       it('should allow a send option', function (done) {
         // TODO test JSONP request
         if (!xhrSupport) return done();
         var send = 'code';
-        this.auth0.startPasswordless({ email: this.email, send: send }, function (err) {
-          done();
-        });
 
-        var requestData = parseRequestBody(this.server.requests[0]);
-        expect(requestData.client_id).to.be(this.clientID);
-        expect(requestData.email).to.be(this.email);
-        expect(requestData.connection).to.be('email');
-        expect(requestData.send).to.be(send);
-        this.server.respond();
+        auth0.startPasswordless({ email: email, send: send })
+          .then(() => {
+            expect(fetchUrl).to.equal('https://' + domain + '/passwordless/start');
+            expect(fetchOptions.method).to.equal('POST');
+            const data = JSON.parse(fetchOptions.body);
+            expect(data.client_id).to.equal(clientID);
+            expect(data.email).to.equal(email);
+            expect(data.connection).to.equal('email');
+            expect(data.send).to.equal(send);
+            done();
+          }, done);
       });
 
       it('should allow an authParams option', function (done) {
         // TODO test JSONP request
         if (!xhrSupport) return done();
-        var authParams = 'fakeauthparams';
-        this.auth0.startPasswordless({ email: this.email, authParams: authParams }, function (err) {
-          done();
-        });
+        var authParams = {key: 'fakeauthparams'};
 
-        var requestData = parseRequestBody(this.server.requests[0]);
-        expect(requestData.client_id).to.be(this.clientID);
-        expect(requestData.email).to.be(this.email);
-        expect(requestData.connection).to.be('email');
-        expect(requestData.authParams).to.be(authParams);
-        this.server.respond();
+        auth0.startPasswordless({ email: email, authParams: authParams })
+          .then(() => {
+            expect(fetchUrl).to.equal('https://' + domain + '/passwordless/start');
+            expect(fetchOptions.method).to.equal('POST');
+            const data = JSON.parse(fetchOptions.body);
+            expect(data.client_id).to.equal(clientID);
+            expect(data.email).to.equal(email);
+            expect(data.connection).to.equal('email');
+            expect(data.authParams.key).to.eql(authParams.key);
+            done();
+          }, done);
       });
     });
 
     describe('unsuccessful attempt to send an email (xhr ' + xhrSupportPrefix + ' supported)', function() {
       beforeEach(function() {
-        this.email = "foo";
-        this.server.respondWith('POST', 'https://' + this.domain + '/passwordless/start', [
+        email = "foo";
+        server.respondWith('POST', 'https://' + domain + '/passwordless/start', [
           400,
           { 'Content-Type': 'application/json' },
-          '{"error":"bad.email","error_description":"error in email - email format validation failed: ' + this.email + '"}'
+          '{"error":"bad.email","error_description":"error in email - email format validation failed: ' + email + '"}'
         ]);
       });
 
@@ -137,8 +162,8 @@ describe('Auth0 - Passwordless', function () {
         // TODO test JSONP request
         if (!xhrSupport) return done();
 
-        var email = this.email;
-        this.auth0.startPasswordless({ email: this.email }, function (err) {
+        var email = email;
+        auth0.startPasswordless({ email: email }, function (err) {
           expect(err).not.to.be(null);
           expect(err).to.have.property('error');
           expect(err).to.have.property('error_description');
@@ -147,13 +172,13 @@ describe('Auth0 - Passwordless', function () {
           done();
         });
 
-        this.server.respond();
+        server.respond();
       });
     });
 
     describe('sending a sms successfully (xhr ' + xhrSupportPrefix + ' supported)', function() {
       beforeEach(function() {
-        this.server.respondWith('POST', 'https://' + this.domain + '/passwordless/start', [
+        server.respondWith('POST', 'https://' + domain + '/passwordless/start', [
           200,
           { 'Content-Type': 'application/json' },
           '{}'
@@ -164,53 +189,53 @@ describe('Auth0 - Passwordless', function () {
         // TODO test JSONP request
         if (!xhrSupport) return done();
 
-        this.auth0.startPasswordless({ phoneNumber: this.phoneNumber }, function (err) {
+        auth0.startPasswordless({ phoneNumber: phoneNumber }, function (err) {
           expect(err).to.be(null);
           done();
         });
 
-        var requestData = parseRequestBody(this.server.requests[0]);
-        expect(requestData.client_id).to.be(this.clientID);
-        expect(requestData.phone_number).to.be(this.phoneNumber);
+        var requestData = parseRequestBody(server.requests[0]);
+        expect(requestData.client_id).to.be(clientID);
+        expect(requestData.phone_number).to.be(phoneNumber);
         expect(requestData.connection).to.be('sms');
-        this.server.respond();
+        server.respond();
       });
 
       it('should not allow a send option', function (done) {
         // TODO test JSONP request
         if (!xhrSupport) return done();
 
-        this.auth0.startPasswordless({ phoneNumber: this.phoneNumber, send: 'link' }, function (err) {
+        auth0.startPasswordless({ phoneNumber: phoneNumber, send: 'link' }, function (err) {
           done();
         });
 
-        var requestData = parseRequestBody(this.server.requests[0]);
+        var requestData = parseRequestBody(server.requests[0]);
         expect(requestData.authParams).to.be(undefined);
-        this.server.respond();
+        server.respond();
       });
 
       it('should not allow an authParams option', function (done) {
         // TODO test JSONP request
         if (!xhrSupport) return done();
 
-        this.auth0.startPasswordless({ phoneNumber: this.phoneNumber, authParams: 'fakeauthparams' }, function (err) {
+        auth0.startPasswordless({ phoneNumber: phoneNumber, authParams: 'fakeauthparams' }, function (err) {
           done();
         });
 
-        var requestData = parseRequestBody(this.server.requests[0]);
+        var requestData = parseRequestBody(server.requests[0]);
         expect(requestData.authParams).to.be(undefined);
-        this.server.respond();
+        server.respond();
       });
 
     });
 
     describe('unsuccessful attempt to send a sms (xhr ' + xhrSupportPrefix + ' supported)', function() {
       beforeEach(function() {
-        this.phoneNumber = '+541234';
-        this.server.respondWith('POST', 'https://' + this.domain + '/passwordless/start', [
+        phoneNumber = '+541234';
+        server.respondWith('POST', 'https://' + domain + '/passwordless/start', [
           400,
           { 'Content-Type': 'application/json' },
-          '{"statusCode":400,"error":"Bad Request","message":"The \'To\' number ' + this.phoneNumber + ' is not a valid phone number."}'
+          '{"statusCode":400,"error":"Bad Request","message":"The \'To\' number ' + phoneNumber + ' is not a valid phone number."}'
         ]);
       });
 
@@ -218,7 +243,7 @@ describe('Auth0 - Passwordless', function () {
         // TODO test JSONP request
         if (!xhrSupport) return done();
 
-        this.auth0.startPasswordless({ phoneNumber: this.phoneNumber }, function (err) {
+        auth0.startPasswordless({ phoneNumber: phoneNumber }, function (err) {
           expect(err).not.to.be(null);
           expect(err).to.have.property('statusCode');
           expect(err).to.have.property('error');
@@ -229,14 +254,13 @@ describe('Auth0 - Passwordless', function () {
           done();
         });
 
-        this.server.respond();
+        server.respond();
       });
     });
   });
 
   describe('.loginWithPasscode()', function () {
     it('should throw if called with just a passcode attribute', function (done) {
-      var auth0 = this.auth0;
       expect(function () {
         auth0.loginWithPasscode({ passcode: '123123' }, function () {});
       }).to.throwError(function (err) {
@@ -247,7 +271,6 @@ describe('Auth0 - Passwordless', function () {
     });
 
     it('should throw if called with just phoneNumber', function (done) {
-      var auth0 = this.auth0;
       expect(function () {
         auth0.loginWithPasscode({ phoneNumber: '+123123123123' }, function () {});
       }).to.throwError(function (err) {
@@ -257,7 +280,6 @@ describe('Auth0 - Passwordless', function () {
     });
 
     it('should throw if called with just email', function (done) {
-      var auth0 = this.auth0;
       expect(function () {
         auth0.loginWithPasscode({ email: 'foo@bar.com' }, function () {});
       }).to.throwError(function (err) {
@@ -267,7 +289,7 @@ describe('Auth0 - Passwordless', function () {
     });
 
     it.skip('should fallback calling .loginWithResourceOwner() with correct options', function (done) {
-      this.auth0.loginWithResourceOwner = function (options, callback) {
+      auth0.loginWithResourceOwner = function (options, callback) {
         expect(options.sso).to.be(false);
         expect(options.phoneNumber).to.be(undefined);
         expect(options.passcode).to.be(undefined);
@@ -279,7 +301,7 @@ describe('Auth0 - Passwordless', function () {
         done();
       }
 
-      this.auth0.loginWithPhoneNumber({
+      auth0.loginWithPhoneNumber({
         phoneNumber: '+123123',
         passcode: '123123',
         connection: 'email',
@@ -292,14 +314,14 @@ describe('Auth0 - Passwordless', function () {
     describe('/oauth/ro', function() {
       describe('successful login (xhr ' + xhrSupportPrefix + ' supported)', function() {
         beforeEach(function() {
-          this.passcode = '123456';
-          this.server.respondWith('POST', 'https://' + this.domain + '/oauth/ro', [
+          passcode = '123456';
+          server.respondWith('POST', 'https://' + domain + '/oauth/ro', [
             200,
             { 'Content-Type': 'application/json' },
             '{}'
           ]);
           // XXX Avoid fetching the profile
-          this.auth0.getProfile = function(id_token, callback) {
+          auth0.getProfile = function(id_token, callback) {
             return callback(null, {});
           }
         });
@@ -308,23 +330,23 @@ describe('Auth0 - Passwordless', function () {
           // TODO test JSONP request
           if (!xhrSupport) return done();
 
-          this.auth0.login({ phoneNumber: this.phoneNumber, passcode: this.passcode }, function (err, profile) {
+          auth0.login({ phoneNumber: phoneNumber, passcode: passcode }, function (err, profile) {
             expect(err).to.be(null);
             done();
           });
 
-          var requestData = parseRequestBody(this.server.requests[0]);
-          expect(requestData.client_id).to.be(this.clientID);
+          var requestData = parseRequestBody(server.requests[0]);
+          expect(requestData.client_id).to.be(clientID);
           expect(requestData.connection).to.be('sms');
           expect(requestData.grant_type).to.be('password');
-          expect(requestData.username).to.be(this.phoneNumber);
-          expect(requestData.password).to.be(this.passcode);
+          expect(requestData.username).to.be(phoneNumber);
+          expect(requestData.password).to.be(passcode);
           expect(requestData.scope).to.be('openid');
           expect(requestData.sso).to.be('false');
           expect(requestData.phoneNumber).to.be(undefined);
           expect(requestData.passcode).to.be(undefined);
 
-          this.server.respond();
+          server.respond();
         });
       });
     });

@@ -712,6 +712,8 @@ export default class Auth0 {
    * @param {Object} options
    */
   startPasswordless(options) {
+    assert(options, 'An options object is required.');
+
     const {email, phoneNumber} = options;
     assert(email || phoneNumber,
       'An `email` or a `phoneNumber` is required.');
