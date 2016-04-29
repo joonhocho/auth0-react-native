@@ -1,33 +1,106 @@
-/**
- * Module dependencies.
- */
-
-var Base64Url         = require('./lib/base64_url');
+/* eslint valid-jsdoc: 0, no-undefined: 0, camelcase: 0 */
+/* global fetch */
+import abab from 'abab';
 import qs from 'qs';
 import {
   decodeToken,
 } from 'jwt-node-decoder';
-
+import LoginError from './LoginError';
 
 
 function assert(statement, message) {
   if (!statement) throw new Error(message);
 }
 
-function fetchPostJson({url, data, headers}) {
+function encodeBase64(str) {
+  return abab.btoa(str)
+  .replace(/\+/g, '-')
+  .replace(/\//g, '_')
+  .replace(/\=+$/, '');
+}
+
+function isSuccessStatus(status) {
+  return /^(20\d|1223)$/.test(status);
+}
+
+function log(...args) {
+  // console.log(...args);
+}
+
+function logError(...args) {
+  // console.error(...args);
+}
+
+function logAndReturn(res) {
+  log('SUCCESS');
+  log(res);
+  // log(JSON.stringify(res, null, '  '));
+  return res;
+}
+
+function logAndThrow(err) {
+  logError('ERROR');
+  log(err);
+  // logError(JSON.stringify(err, null, '  '));
+  throw err;
+}
+
+function processResponse(response) {
+  log('RESPONSE');
+  log(response.status);
+  log(response.responseText);
+  log(response);
+  // logError(JSON.stringify(response, null, '  '));
+  return response.json()
+    .then(logAndReturn, logAndThrow)
+    .then((json) => {
+      if (isSuccessStatus(response.status)) {
+        return json;
+      }
+      response.responseText = JSON.stringify(json);
+      throw response;
+    });
+}
+
+function postJson({url, data, headers}) {
+  log('POST', url, JSON.stringify(data));
   return fetch(url, {
     method: 'POST',
     headers: {
-      'Accept': 'application/json',
+      Accept: 'application/json',
       'Content-Type': 'application/json',
       ...headers,
     },
     body: JSON.stringify(data),
-  }).then((response) => response.json());
+  })
+    .then(processResponse);
 }
 
 function sanitizeString(str) {
   return str ? str.trim() : '';
+}
+
+function handleRequestError(err) {
+  let status = err.status;
+  let responseText = typeof err.responseText === 'string' ?
+    err.responseText : err;
+
+  logError('ERROR', status, responseText, err);
+  // log(JSON.stringify(err, null, '  '));
+
+  if (!status) {
+    status = 0;
+    responseText = {
+      code: 'connection_refused_timeout',
+    };
+  }
+
+  throw new LoginError(status, responseText);
+}
+
+function throwLoginError({status, responseText}) {
+  logError('LOGIN ERROR', status, responseText, typeof responseText);
+  throw new LoginError(status, responseText);
 }
 
 /**
@@ -42,6 +115,8 @@ export default class Auth0 {
   }
 
   static decodeToken = decodeToken
+  static postJson = postJson
+  static encodeBase64 = encodeBase64
 
   constructor({
     clientID,
@@ -70,7 +145,7 @@ export default class Auth0 {
 
 
   getUrlForEndpoint(endpoint) {
-    return `https://${this._domain}/${endpoint}`;
+    return `https://${this._domain}${endpoint}`;
   }
 
   _getCallbackURL({callbackURL}) {
@@ -78,7 +153,7 @@ export default class Auth0 {
   }
 
   _getClientInfoString() {
-    return Base64Url.encode(JSON.stringify(Auth0.clientInfo));
+    return encodeBase64(JSON.stringify(Auth0.clientInfo));
   }
 
   _getClientInfoHeader() {
@@ -90,13 +165,13 @@ export default class Auth0 {
   /**
    * Resolve response type as `token` or `code`
    *
-   * @return {Object} `scope` and `response_type` properties
+   * @return {Object} options `scope` and `response_type` properties
    * @private
    */
   _getMode(options) {
     return {
       scope: 'openid',
-      response_type: this._getCallbackOnLocationHash(options) ? 'token' : 'code',
+      response_type: 'token',
     };
   }
 
@@ -121,7 +196,7 @@ export default class Auth0 {
       return Promise.resolve(profile);
     }
 
-    return fetchPostJson({
+    return postJson({
       url: this.getUrlForEndpoint('/tokeninfo'),
       data: {id_token},
     });
@@ -135,6 +210,7 @@ export default class Auth0 {
    */
   getProfile(id_token) {
     if (!id_token || typeof id_token !== 'string') {
+      logError('id_token', id_token);
       return Promise.reject(new Error('Invalid token'));
     }
 
@@ -148,15 +224,18 @@ export default class Auth0 {
    * @param {Object} options
    */
   validateUser(options) {
-    return fetchPostJson({
-      url: this.getUrlForEndpoint('/public/api/users/validate_userpassword'),
-      data: {
+    return fetch(this.getUrlForEndpoint('/public/api/users/validate_userpassword'), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
         client_id: this._clientID,
         ...options,
         username: sanitizeString(options.username || options.email),
-      },
+      }),
     }).then(
-      ({status}) => status === 200,
+      (res) => res.status === 200,
       (error) => {
         if (error.status === 404) return false;
         throw error;
@@ -189,14 +268,16 @@ export default class Auth0 {
 
     this._configureOfflineMode(query);
 
-    const response = await fetchPostJson({
+    const response = await postJson({
       url: this.getUrlForEndpoint('/dbconnections/signup'),
       data: query,
-    });
+    })
+      .catch(throwLoginError);
 
-    if (options.auto_login) {
+    if (query.auto_login) {
       return this.login(options);
     }
+
     return response;
   }
 
@@ -207,7 +288,8 @@ export default class Auth0 {
    * @param {Object} options
    */
   changePassword(options) {
-    return fetchPostJson({
+    console.log('changePassword', options);
+    return postJson({
       url: this.getUrlForEndpoint('/dbconnections/change_password'),
       data: {
         tenant: this.tenant,
@@ -216,7 +298,8 @@ export default class Auth0 {
         username: sanitizeString(options.username),
         email: sanitizeString(options.email || options.username),
       },
-    });
+    })
+      .catch(throwLoginError);
   }
 
 
@@ -233,13 +316,13 @@ export default class Auth0 {
 
     // Adds client SDK information (when enabled)
     if (this._sendClientInfo) {
-      query['auth0Client'] = this._getClientInfoString();
+      query.auth0Client = this._getClientInfoString();
     }
 
     // Elements to filter from query string
     (blacklist || ['popup', 'popupOptions']).forEach((key) => { delete query[key]; });
 
-    if (Array.isArray(query.connection_scope)){
+    if (Array.isArray(query.connection_scope)) {
       query.connection_scope = query.connection_scope.join(',');
     }
 
@@ -267,7 +350,8 @@ export default class Auth0 {
       ...options,
     });
 
-    return fetch(this.getUrlForEndpoint('/authorize?' + query));
+    return fetch(this.getUrlForEndpoint(`/authorize?${query}`))
+      .then(processResponse);
   }
 
 
@@ -300,10 +384,11 @@ export default class Auth0 {
 
 
   addProfile = (auth) => {
+    log('addProfile', auth);
     return this.getProfile(auth.id_token).then((profile) => ({
       auth,
       profile,
-    }));
+    }))
   }
 
 
@@ -323,11 +408,13 @@ export default class Auth0 {
 
     this._configureOfflineMode(query);
 
-    return fetchPostJson({
+    return postJson({
       url: this.getUrlForEndpoint('/oauth/ro'),
       data: query,
       headers: this._getClientInfoHeader(),
-    }).then(this.addProfile);
+    })
+      .then(this.addProfile)
+      .catch(handleRequestError);
   }
 
 
@@ -337,7 +424,7 @@ export default class Auth0 {
    * @param {Object} options
    */
   loginWithSocialAccessToken(options) {
-    return fetchPostJson({
+    return postJson({
       url: this.getUrlForEndpoint('/oauth/access_token'),
       data: this._buildAuthorizationParameters({
         scope: 'openid',
@@ -345,7 +432,9 @@ export default class Auth0 {
         ...options,
       }),
       headers: this._getClientInfoHeader(),
-    }).then(this.addProfile);
+    })
+      .then(this.addProfile)
+      .catch(handleRequestError);
   }
 
 
@@ -359,9 +448,12 @@ export default class Auth0 {
       return this.loginWithResourceOwner(options);
     }
 
+    /*
+      TODO
     if (options.sso) {
       return this.loginWithUsernamePasswordAndSSO(options);
     }
+    */
 
     const query = {
       ...this._getMode(options),
@@ -374,16 +466,17 @@ export default class Auth0 {
 
     this._configureOfflineMode(query);
 
-    return fetchPostJson({
+    return postJson({
       url: this.getUrlForEndpoint('/usernamepassword/login'),
       data: query,
       headers: this._getClientInfoHeader(),
-    });
+    })
+      .catch(handleRequestError);
   }
 
 
   _verify(options) {
-    return fetchPostJson({
+    return postJson({
       url: this.getUrlForEndpoint('/passwordless/verify'),
       data: options,
       headers: this._getClientInfoHeader(),
@@ -399,7 +492,7 @@ export default class Auth0 {
       ...options,
     });
 
-    return this._redirect(this.getUrlForEndpoint('/passwordless/verify_redirect?' + query));
+    return this._redirect(this.getUrlForEndpoint(`/passwordless/verify_redirect?${query}`));
   }
 
 
@@ -424,7 +517,7 @@ export default class Auth0 {
         username: useSMS ? phoneNumber : email,
         password: passcode,
         sso: false,
-      });
+      };
 
       delete options.email;
       delete options.phoneNumber;
@@ -473,7 +566,7 @@ export default class Auth0 {
    */
   logout(query) {
     let url = this.getUrlForEndpoint('/logout');
-    if (query) url += '?' + qs.stringify(query);
+    if (query) url += `?${qs.stringify(query)}`;
     return this._redirect(url);
   }
 
@@ -512,7 +605,7 @@ export default class Auth0 {
    * @param {String} [api_type]
    */
   getDelegationToken(options) {
-    assert(options.id_token || options.refresh_token
+    assert(options.id_token || options.refresh_token,
       'You must send either an id_token or a refresh_token to get a delegation token.');
 
     const query = {
@@ -527,10 +620,30 @@ export default class Auth0 {
     delete query.targetClientId;
     delete query.api;
 
-    return fetchPostJson({
+    return postJson({
       url: this.getUrlForEndpoint('/delegation'),
       data: query,
-    });
+    })
+      .catch((err) => {
+        logError('ERROR', err);
+        let error;
+        try {
+          error = JSON.parse(err.responseText);
+        } catch (e) {
+          let {status} = err;
+          let details;
+          if (status) {
+            details = err;
+          } else {
+            status = 0;
+            details = {
+              code: 'connection_refused_timeout',
+            };
+          }
+          throw new LoginError(status, details);
+        }
+        throw error;
+      });
   }
 
 
@@ -597,7 +710,7 @@ export default class Auth0 {
       data.connection = 'sms';
     }
 
-    return fetchPostJson({
+    return postJson({
       url: this.getUrlForEndpoint('/passwordless/start'),
       headers: this._getClientInfoHeader(),
       data,

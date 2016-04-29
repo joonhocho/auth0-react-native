@@ -1,11 +1,7 @@
+import Auth0 from '../lib';
 import {expect} from 'chai';
-import {
-  decodeToken,
-  getTokenExpirationDate,
-  isTokenExpired,
-} from '../lib';
 
-describe('jwt', () => {
+describe('Auth0', () => {
   describe('no expiration tokens', () => {
     const infiniteToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEyMzQ1Njc4OTAsIm5hbWUiOiJKb2huIERvZSIsImFkbWluIjp0cnVlfQ.eoaDVGTClRdfxUZXiPs3f8FmJDkDE_VCQFXqKxpLsts';
     it('should correctly decode it', () => {
