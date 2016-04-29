@@ -319,7 +319,8 @@ export default class Auth0 {
     }
 
     // Elements to filter from query string
-    (blacklist || ['popup', 'popupOptions']).forEach((key) => { delete query[key]; });
+    (blacklist || ['popup', 'popupOptions']).forEach(
+      (key) => { delete query[key]; });
 
     if (Array.isArray(query.connection_scope)) {
       query.connection_scope = query.connection_scope.join(',');
@@ -491,7 +492,8 @@ export default class Auth0 {
       ...options,
     });
 
-    return this._redirect(this.getUrlForEndpoint(`/passwordless/verify_redirect?${query}`));
+    return this._redirect(
+      this.getUrlForEndpoint(`/passwordless/verify_redirect?${query}`));
   }
 
 
@@ -604,27 +606,28 @@ export default class Auth0 {
    * @example
    *
    *     auth0.getDelegationToken({
-   *      id_token:   '<user-id-token>',
-   *      target:     '<app-client-id>'
-   *      api_type: 'auth0'
-   *     }, function (err, delegationResult) {
-   *        if (err) return console.log(err.message);
-   *        // Do stuff with delegation token
-   *        expect(delegationResult.id_token).to.exist;
-   *        expect(delegationResult.token_type).to.eql('Bearer');
-   *        expect(delegationResult.expires_in).to.eql(36000);
+   *       id_token:   '<user-id-token>',
+   *       target:     '<app-client-id>'
+   *       api_type: 'auth0'
+   *     }).then((delegationResult) => {
+   *       // Do stuff with delegation token
+   *       expect(delegationResult.id_token).to.exist;
+   *       expect(delegationResult.token_type).to.eql('Bearer');
+   *       expect(delegationResult.expires_in).to.eql(36000);
+   *     }, (err) => {
+   *       console.log(err.message);
    *     });
    *
    * @example
    *
    *      // get a delegation token from a Firebase API App
    *     auth0.getDelegationToken({
-   *      id_token:   '<user-id-token>',
-   *      target:     '<app-client-id>'
-   *      api_type: 'firebase'
-   *     }, function (err, delegationResult) {
-   *      // Use your firebase token here
-   *    });
+   *       id_token:   '<user-id-token>',
+   *       target:     '<app-client-id>'
+   *       api_type: 'firebase'
+   *     }).then((delegationResult) => {
+   *       // Use your firebase token here
+   *     });
    *
    * @param {Object} [options]
    * @param {String} [id_token]
@@ -697,17 +700,23 @@ export default class Auth0 {
    *
    * @example
    *     // To send an email
-   *     auth0.startPasswordless({email: 'foo@bar.com'}, function (err, result) {
-   *       if (err) return console.log(err.error_description);
-   *       console.log(result);
-   *     });
+   *     auth0.startPasswordless({email: 'foo@bar.com'}).then(
+   *       (result) => {
+   *         console.log(result);
+   *       },
+   *       (err) => {
+   *         console.log(err.error_description);
+   *       });
    *
    * @example
    *     // To send a SMS
-   *     auth0.startPasswordless({phoneNumber: '+14251112222'}, function (err, result) {
-   *       if (err) return console.log(err.error_description);
-   *       console.log(result);
-   *     });
+   *     auth0.startPasswordless({phoneNumber: '+14251112222'}).then(
+   *       (result) => {
+   *         console.log(result);
+   *       },
+   *       (err) => {
+   *         console.log(err.error_description);
+   *       });
    *
    * @param {Object} options
    */
@@ -729,8 +738,8 @@ export default class Auth0 {
         if (!data.authParams) data.authParams = {};
 
         data.authParams.redirect_uri = this._callbackURL;
-        data.authParams.response_type = this._shouldRedirect && !this._callbackOnLocationHash ?
-            'code' : 'token';
+        data.authParams.response_type = this._shouldRedirect &&
+            !this._callbackOnLocationHash ? 'code' : 'token';
       }
 
       if (options.send) data.send = options.send;
