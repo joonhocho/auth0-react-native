@@ -52,6 +52,12 @@ Please help with Pull Requests!
  - Documentation
 
 
+### Dependencies
+Encoding Base64: https://github.com/jsdom/abab
+Decoding JWT: https://github.com/joonhocho/jwt-node-decoder
+Constructing Query String: https://github.com/ljharb/qs
+
+
 ### LICENSE
 ```
 The MIT License (MIT)
