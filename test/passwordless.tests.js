@@ -1,5 +1,8 @@
 import {expect} from 'chai';
+import fetch from 'node-fetch';
+global.fetch = fetch;
 import Auth0 from '../lib';
+import sinon from 'sinon';
 
 /**
  * XHR support variables

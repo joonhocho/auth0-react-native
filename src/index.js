@@ -135,7 +135,7 @@ export default class Auth0 {
     this._shouldRedirect = Boolean(callbackURL);
     this._callbackOnLocationHash = callbackOnLocationHash;
     this._sendClientInfo = sendSDKClientInfo == null ? true : sendSDKClientInfo;
-    this._device = device || 'Mobile App';
+    this._device = device;
   }
 
 
@@ -179,7 +179,7 @@ export default class Auth0 {
   _configureOfflineMode(options) {
     const {scope, device} = options;
     if (!device && scope && scope.indexOf('offline_access') >= 0) {
-      options.device = this._device;
+      options.device = this._device || 'ReactNative';
     }
   }
 
@@ -288,7 +288,6 @@ export default class Auth0 {
    * @param {Object} options
    */
   changePassword(options) {
-    console.log('changePassword', options);
     return postJson({
       url: this.getUrlForEndpoint('/dbconnections/change_password'),
       data: {
@@ -572,6 +571,34 @@ export default class Auth0 {
 
 
   /**
+   * Get all configured connections for a client
+   *
+   * @example
+   *
+   *     auth0.getConnections(function (err, conns) {
+   *       if (err) return console.log(err.message);
+   *       expect(conns.length).to.be.above(0);
+   *       expect(conns[0].name).to.eql('Apprenda.com');
+   *       expect(conns[0].strategy).to.eql('adfs');
+   *       expect(conns[0].status).to.eql(false);
+   *       expect(conns[0].domain).to.eql('Apprenda.com');
+   *       expect(conns[0].domain_aliases).to.eql(['Apprenda.com', 'foo.com', 'bar.com']);
+   *     });
+   *
+   * @method getConnections
+   */
+  // XXX We may change the way this method works in the future to use client's s3 file.
+  // TODO DOES NOT WORK
+  /*
+  getConnections() {
+    return postJson({
+      url: this.getUrlForEndpoint(`/public/api/${this._clientID}/connections`),
+    });
+  }
+  */
+
+
+  /**
    * Get delegation token for certain addon or certain other clientId
    *
    * @example
@@ -605,7 +632,7 @@ export default class Auth0 {
    * @param {String} [api_type]
    */
   getDelegationToken(options) {
-    assert(options.id_token || options.refresh_token,
+    assert(options && (options.id_token || options.refresh_token),
       'You must send either an id_token or a refresh_token to get a delegation token.');
 
     const query = {
