@@ -642,9 +642,9 @@ export default class Auth0 {
       'You must send either an id_token or a refresh_token to get a delegation token.');
 
     const query = {
-      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
       client_id: this._clientID,
-      target: options.target || this._clientID,
+      target: this._clientID,
+      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
       ...options,
     };
 
