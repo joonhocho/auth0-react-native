@@ -1,6 +1,6 @@
 {
   "name": "auth0-react-native",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "React Native port of Auth0 SDK (auth0/auth0.js)",
   "main": "lib/index.js",
   "directories": {
