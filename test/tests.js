@@ -2,13 +2,11 @@ import {expect} from 'chai';
 import fetch from 'node-fetch';
 global.fetch = fetch;
 import Auth0 from '../lib';
+import {failPromise} from './util';
 
-/**
- * Test Auth0
- */
 
 describe('Auth0', function() {
-  this.timeout(60000);
+  this.timeout(5000);
 
   it('has a semver tag', (done) => {
     expect(Auth0.clientInfo.version).to.be.a('string');
@@ -233,7 +231,7 @@ describe('Auth0', function() {
           domain:       'aaa.auth0.com'
         });
 
-        auth0.getProfile({foo: 'bar'}).then(done, function (err) {
+        auth0.getProfile({foo: 'bar'}).then(failPromise(done), function (err) {
           expect(err.message).to.equal('Invalid token');
           done();
         });
@@ -248,7 +246,7 @@ describe('Auth0', function() {
           domain:       'aaa.auth0.com'
         });
 
-        auth0.getProfile(null).then(done, function (err) {
+        auth0.getProfile(null).then(failPromise(done), function (err) {
           expect(err.message).to.eql('Invalid token');
           done();
         });
@@ -273,7 +271,7 @@ describe('Auth0', function() {
           expect(profile.foo).to.eql('bar');
           expect(profile.identities.length).to.eql(1);
           done();
-        }, done);
+        }, failPromise(done));
 
       });
 
@@ -333,7 +331,7 @@ describe('Auth0', function() {
         expect(conns[0].status).to.eql(false);
         expect(conns[0].domain).to.eql('Apprenda.com');
         done();
-      }, done);
+      }, failPromise(done));
     });
   });
 
@@ -350,13 +348,13 @@ describe('Auth0', function() {
 
       auth0.getDelegationToken({
         id_token: id_token,
-        api: 'auth0'
+        api_type: 'auth0'
       }).then((delegationResult) => {
         expect(delegationResult.id_token).to.exist;
         expect(delegationResult.token_type).to.eql('Bearer');
         expect(delegationResult.expires_in).to.eql(36000);
         done();
-      }, done);
+      }, failPromise(done));
     });
 
     it('should refresh the token when calling refresh as well', function (done) {
@@ -367,7 +365,7 @@ describe('Auth0', function() {
         expect(delegationResult.token_type).to.eql('Bearer');
         expect(delegationResult.expires_in).to.eql(36000);
         done();
-      }, done);
+      }, failPromise(done));
     });
 
     it('should throw error if no token is sent', function () {
@@ -388,7 +386,7 @@ describe('Auth0', function() {
         expect(delegationResult.token_type).to.eql('Bearer');
         expect(delegationResult.expires_in).to.eql(36000);
         done();
-      }, done);
+      }, failPromise(done));
     });
 
     it('should return a Firebase token by default or when asked', function (done) {
@@ -399,14 +397,14 @@ describe('Auth0', function() {
       }).then((delegationResult) => {
         auth0.getDelegationToken({
           id_token: id_token,
-          api: 'firebase'
+          api_type: 'firebase'
         }).then((delegationResult2) => {
           expect(delegationResult2.id_token).to.exist;
           expect(delegationResult2.token_type).to.eql('Bearer');
           expect(delegationResult2.expires_in).to.eql(36000);
           done();
-        }, done);
-      }, done);
+        }, failPromise(done));
+      }, failPromise(done));
     });
 
   });

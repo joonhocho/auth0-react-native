@@ -3,6 +3,7 @@ import fetch from 'node-fetch';
 global.fetch = fetch;
 import Auth0 from '../lib';
 import sinon from 'sinon';
+import {failPromise} from './util';
 
 /**
  * XHR support variables
@@ -19,7 +20,9 @@ var xhrSupportPrefix = xhrSupport ? '' : 'not ';
  * Test User and Password
  */
 
-describe('Auth0 - Passwordless', function () {
+describe.skip('Auth0 - Passwordless', function () {
+  this.timeout(5000);
+
   let domain;
   let clientID;
   let auth0;
@@ -59,7 +62,7 @@ describe('Auth0 - Passwordless', function () {
     error = null;
   });
 
-  describe.only('.startPasswordless()', function () {
+  describe('.startPasswordless()', function () {
     it('should throw if no arguments are passed', function () {
       expect(function () {
         auth0.startPasswordless();
@@ -108,7 +111,7 @@ describe('Auth0 - Passwordless', function () {
             expect(data.email).to.equal(email);
             expect(data.connection).to.equal('email');
             done();
-          }, done);
+          }, failPromise(done));
       });
 
       it('should allow a send option', function (done) {
@@ -126,7 +129,7 @@ describe('Auth0 - Passwordless', function () {
             expect(data.connection).to.equal('email');
             expect(data.send).to.equal(send);
             done();
-          }, done);
+          }, failPromise(done));
       });
 
       it('should allow an authParams option', function (done) {
@@ -144,7 +147,7 @@ describe('Auth0 - Passwordless', function () {
             expect(data.connection).to.equal('email');
             expect(data.authParams.key).to.eql(authParams.key);
             done();
-          }, done);
+          }, failPromise(done));
       });
     });
 
@@ -288,7 +291,7 @@ describe('Auth0 - Passwordless', function () {
       });
     });
 
-    it.skip('should fallback calling .loginWithResourceOwner() with correct options', function (done) {
+    it('should fallback calling .loginWithResourceOwner() with correct options', function (done) {
       auth0.loginWithResourceOwner = function (options, callback) {
         expect(options.sso).to.be(false);
         expect(options.phoneNumber).to.be(undefined);

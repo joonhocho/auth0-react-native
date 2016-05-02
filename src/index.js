@@ -224,6 +224,9 @@ export default class Auth0 {
    * @param {Object} options
    */
   validateUser(options) {
+    if (!options.connection) {
+      return Promise.reject(new Error('connection parameter is mandatory'));
+    }
     return fetch(this.getUrlForEndpoint('/public/api/users/validate_userpassword'), {
       method: 'POST',
       headers: {
@@ -641,14 +644,9 @@ export default class Auth0 {
     const query = {
       grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
       client_id: this._clientID,
-      target: options.targetClientId || this._clientID,
-      api_type: options.api_type,
+      target: options.target || this._clientID,
       ...options,
     };
-
-    delete query.hasOwnProperty;
-    delete query.targetClientId;
-    delete query.api_type;
 
     return postJson({
       url: this.getUrlForEndpoint('/delegation'),

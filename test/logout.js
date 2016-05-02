@@ -2,12 +2,15 @@ import {expect} from 'chai';
 import fetch from 'node-fetch';
 global.fetch = fetch;
 import Auth0 from '../lib';
+import {failPromise} from './util';
 
 /**
  * Test Logout
  */
 
-describe('logout', () => {
+describe('logout', function() {
+  this.timeout(5000);
+
   it('should redirect to the logout url', (done) => {
     const auth0 = new Auth0({
       domain: 'mdocs.auth0.com',

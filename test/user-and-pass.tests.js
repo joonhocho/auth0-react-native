@@ -3,6 +3,7 @@ import fetch from 'node-fetch';
 global.fetch = fetch;
 import Auth0 from '../lib';
 import sinon from 'sinon';
+import {failPromise} from './util';
 
 
 /**
@@ -12,16 +13,12 @@ import sinon from 'sinon';
 var xhrSupport = !(new Auth0({clientID: 'clientID', domain: 'domain'}))._useJSONP;
 var xhrSupportPrefix = xhrSupport ? '' : 'not ';
 
-function log(...args) {
-  console.log(...args);
-}
-
 /**
  * Test User and Password
  */
 
 describe('Auth0 - User And Passwords', function () {
-  this.timeout(60000);
+  this.timeout(5000);
 
   const auth0 = new Auth0({
     domain:      'mdocs.auth0.com',
@@ -37,7 +34,7 @@ describe('Auth0 - User And Passwords', function () {
           username: 'testttt@wrong.com',
           password: '12345',
           sso: false,
-        }).then(done, (err) => {
+        }).then(failPromise(done), (err) => {
           expect(err.status).to.equal(401);
           expect(err.details.code).to.equal('invalid_user_password');
           done();
@@ -75,7 +72,7 @@ describe('Auth0 - User And Passwords', function () {
           expect(id_token).to.exist;
           expect(access_token).to.exist;
           done();
-        }, done);
+        }, failPromise(done));
       });
 
       it('should return refresh_token after successfull authentication with offline_mode', (done) => {
@@ -94,10 +91,7 @@ describe('Auth0 - User And Passwords', function () {
           expect(refresh_token).to.exist;
           expect(access_token).to.exist;
           done();
-        }, (err) => {
-          log(err);
-          done(err);
-        });
+        }, failPromise(done));
       });
 
       it('should trim username before login', (done) => {
@@ -113,7 +107,7 @@ describe('Auth0 - User And Passwords', function () {
           expect(id_token).to.exist;
           expect(access_token).to.exist;
           done();
-        });
+        }, failPromise(done));
       });
     });
 
@@ -125,7 +119,7 @@ describe('Auth0 - User And Passwords', function () {
           connection: 'tests',
           username: 'testttt@wrong.com',
           password: '12345',
-        }).then(done, (err) => {
+        }).then(failPromise(done), (err) => {
           expect(err.status).to.equal(401);
           expect(err.details.code).to.equal('invalid_user_password');
           done();
@@ -137,7 +131,7 @@ describe('Auth0 - User And Passwords', function () {
           connection: 'testsw3eeasdsadsa',
           username: 'testtttt@wrong.com',
           password: '12345',
-        }).then(done, (err) => {
+        }).then(failPromise(done), (err) => {
           expect(err.status).to.equal(404);
           expect(err.message).to.match(/connection not found/ig);
           done();
@@ -166,7 +160,7 @@ describe('Auth0 - User And Passwords', function () {
         connection: 'tests',
         username: null,
         password: '12345'
-      }).then(done, (err) => {
+      }).then(failPromise(done), (err) => {
         expect(err.status).to.equal(400);
         expect(err.message).to.exist;
         expect(err.details).to.exist;
@@ -180,7 +174,7 @@ describe('Auth0 - User And Passwords', function () {
         username:   'pepo@example.com',
         password:   '12345',
         auto_login: false
-      }).then(done, (err) => {
+      }).then(failPromise(done), (err) => {
         expect(err.status).to.equal(401);
         expect(err.message).to.exist;
         expect(err.details).to.exist;
@@ -201,7 +195,7 @@ describe('Auth0 - User And Passwords', function () {
           expect(id_token).to.exist;
           expect(access_token).to.exist;
           done();
-        }, done);
+        }, failPromise(done));
       });
 
       it('should not return profile after successfull signup if auto_login is false', (done) => {
@@ -215,7 +209,7 @@ describe('Auth0 - User And Passwords', function () {
           password:   '12345',
           auto_login: false,
           sso: false
-        }).then(({profile}) => done(profile), done);
+        }).then(({profile}) => done(profile), failPromise(done));
       });
 
       it('should trim username before signup', (done) => {
@@ -227,7 +221,7 @@ describe('Auth0 - User And Passwords', function () {
         }).then((profile) => {
           expect(profile).to.be.ok;
           done();
-        }, done);
+        }, failPromise(done));
       });
 
       it('should handle username and email when requires_username enabled', (done) => {
@@ -245,7 +239,7 @@ describe('Auth0 - User And Passwords', function () {
           expect(profile.username).to.equal(username);
           expect(profile.email).to.equal(username + '@gmail.com');
           done();
-        }, done);
+        }, failPromise(done));
       });
 
     });
@@ -293,7 +287,7 @@ describe('Auth0 - User And Passwords', function () {
         connection: 'requires-username',
         email: username + '@gmail.com',
         password:   '12345'
-      }).then(done, (err) => {
+      }).then(failPromise(done), (err) => {
         expect(err.status).to.equal(400);
         expect(err).to.have.property('message');
         expect(err).to.have.property('details');
@@ -311,7 +305,7 @@ describe('Auth0 - User And Passwords', function () {
         connection: 'tests',
         username:   null,
         password:   '12345'
-      }).then(done, (err) => {
+      }).then(failPromise(done), (err) => {
         expect(err.status).to.equal(400);
         expect(err).to.have.property('message');
         expect(err).to.have.property('details');
@@ -325,7 +319,7 @@ describe('Auth0 - User And Passwords', function () {
         connection: 'tests',
         username:   'johnfoo@contoso.com',
         password:   '12345'
-      }).then(() => done(), done);
+      }).then(() => done(), failPromise(done));
     });
 
     it('should trim username before operation', (done) => {
@@ -333,7 +327,7 @@ describe('Auth0 - User And Passwords', function () {
         connection: 'tests',
         username:     '    johnfoo@gmail.com    ',
         password:   '12345'
-      }).then(() => done(), done);
+      }).then(() => done(), failPromise(done));
     });
 
     // TODO does not work on node.
@@ -368,7 +362,7 @@ describe('Auth0 - User And Passwords', function () {
         connection: 'tests',
         username:   'johnfoo@contoso.com',
         password:   '12345'
-      }).then(done, (err) => {
+      }).then(failPromise(done), (err) => {
         expect(err).to.not.be(null);
         expect(err.message).to.eql('Password is not strong enough.');
         expect(err.details).to.eql(response);
@@ -389,7 +383,7 @@ describe('Auth0 - User And Passwords', function () {
       }).then((valid) => {
         expect(valid).to.equal(true);
         done();
-      }, done);
+      }, failPromise(done));
     });
 
     it('should return "true" if the credentials with username and email are valid', (done) => {
@@ -401,7 +395,7 @@ describe('Auth0 - User And Passwords', function () {
       }).then((valid) => {
         expect(valid).to.equal(false);
         done();
-      }, done);
+      }, failPromise(done));
     });
 
     it('should return "false" if username is invalid', (done) => {
@@ -412,7 +406,7 @@ describe('Auth0 - User And Passwords', function () {
       }).then((valid) => {
         expect(valid).to.equal(false);
         done();
-      }, done);
+      }, failPromise(done));
     });
 
     it('should return "false" if email is valid and username is invalid', (done) => {
@@ -424,7 +418,7 @@ describe('Auth0 - User And Passwords', function () {
       }).then((valid) => {
         expect(valid).to.equal(false);
         done();
-      }, done);
+      }, failPromise(done));
     });
 
     it('should return "false" if email is invalid and username is valid', (done) => {
@@ -436,7 +430,7 @@ describe('Auth0 - User And Passwords', function () {
       }).then((valid) => {
         expect(valid).to.equal(false);
         done();
-      }, done);
+      }, failPromise(done));
     });
 
     it('should return "false" if connection is invalid', (done) => {
@@ -447,14 +441,14 @@ describe('Auth0 - User And Passwords', function () {
       }).then((valid) => {
         expect(valid).to.equal(false);
         done();
-      }, done);
+      }, failPromise(done));
     });
 
     it('should return error if connection is not specified', (done) => {
       auth0.validateUser({
         username:     'johnfoo@gmail.com',
         password:     '12345'
-      }).then(done, (err) => {
+      }).then(failPromise(done), (err) => {
         expect(err.message).to.equal('connection parameter is mandatory');
         done();
       });
@@ -468,7 +462,7 @@ describe('Auth0 - User And Passwords', function () {
       }).then((valid) => {
         expect(valid).to.equal(true);
         done();
-      }, done);
+      }, failPromise(done));
     });
   });
 
