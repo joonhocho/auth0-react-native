@@ -642,13 +642,13 @@ export default class Auth0 {
       grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
       client_id: this._clientID,
       target: options.targetClientId || this._clientID,
-      api_type: options.api,
+      api_type: options.api_type,
       ...options,
     };
 
     delete query.hasOwnProperty;
     delete query.targetClientId;
-    delete query.api;
+    delete query.api_type;
 
     return postJson({
       url: this.getUrlForEndpoint('/delegation'),
@@ -681,7 +681,7 @@ export default class Auth0 {
     return this.getDelegationToken({
       id_token,
       scope: 'passthrough',
-      api: 'auth0',
+      api_type: 'auth0',
     });
   }
 
@@ -690,7 +690,7 @@ export default class Auth0 {
     return this.getDelegationToken({
       refresh_token,
       scope: 'passthrough',
-      api: 'auth0',
+      api_type: 'auth0',
     });
   }
 
