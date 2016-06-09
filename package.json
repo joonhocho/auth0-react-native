@@ -1,20 +1,24 @@
 {
   "name": "auth0-react-native",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "React Native port of Auth0 SDK (auth0/auth0.js)",
   "main": "lib/index.js",
   "directories": {
     "test": "test"
   },
   "scripts": {
-    "build": "BABEL_ENV=babel babel src --out-dir lib",
-    "build-watch": "BABEL_ENV=babel babel src --watch --out-dir lib",
-    "start": "npm run build && npm run test-build && npm run test",
-    "test": "mocha testout/**/*.js",
-    "test-build": "BABEL_ENV=babel babel test --out-dir testout",
-    "test-build-watch": "BABEL_ENV=babel babel test --watch --out-dir testout",
-    "test-watch": "mocha --watch testout/**/*.js",
-    "watch": "npm run build-watch & npm run test-build-watch & npm run test-watch"
+    "build": "babel src --out-dir lib",
+    "build-watch": "babel src --watch --out-dir lib",
+    "clear": "rm -rf ./lib ./coverage ./.nyc_output",
+    "coverage": "nyc npm test && nyc report --reporter=text-lcov | coveralls",
+    "nyc": "nyc npm test && nyc report --reporter=lcov",
+    "prepublish": "npm run clear && npm test",
+    "pretest": "npm run build",
+    "start": "npm test",
+    "test": "mocha",
+    "test-watch": "mocha --watch",
+    "update-D": "npm install --save-dev babel-cli@latest babel-preset-es2015@latest babel-preset-stage-0@latest babel-register@latest chai@latest chai-as-promised@latest coveralls@latest graphql@latest mocha@latest nyc@latest",
+    "watch": "npm run build-watch & npm run test-watch"
   },
   "repository": {
     "type": "git",
@@ -33,20 +37,24 @@
     "url": "https://github.com/joonhocho/auth0-react-native/issues"
   },
   "homepage": "https://github.com/joonhocho/auth0-react-native#readme",
-  "devDependencies": {
-    "babel-cli": "^6.7.7",
-    "babel-plugin-transform-runtime": "^6.7.5",
-    "babel-preset-es2015": "^6.6.0",
-    "babel-preset-stage-0": "^6.5.0",
-    "chai": "^3.5.0",
-    "mocha": "^2.4.5",
-    "node-fetch": "^1.5.1",
-    "sinon": "^1.17.3"
-  },
   "dependencies": {
     "abab": "^1.0.3",
-    "babel-runtime": "^6.6.1",
-    "jwt-node-decoder": "0.0.3",
-    "qs": "^6.1.0"
+    "babel-runtime": "^6.9.2",
+    "jwt-node-decoder": "0.0.4",
+    "qs": "^6.2.0"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.9.0",
+    "babel-plugin-transform-runtime": "^6.9.0",
+    "babel-preset-es2015": "^6.9.0",
+    "babel-preset-stage-0": "^6.5.0",
+    "babel-register": "^6.9.0",
+    "chai": "^3.5.0",
+    "chai-as-promised": "^5.3.0",
+    "coveralls": "^2.11.9",
+    "mocha": "^2.5.3",
+    "node-fetch": "^1.5.3",
+    "nyc": "^6.4.4",
+    "sinon": "^1.17.4"
   }
 }

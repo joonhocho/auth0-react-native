@@ -1,4 +1,10 @@
 # auth0-react-native
+[![Build Status](https://travis-ci.org/joonhocho/auth0-react-native.svg?branch=master)](https://travis-ci.org/joonhocho/auth0-react-native)
+[![Coverage Status](https://coveralls.io/repos/github/joonhocho/auth0-react-native/badge.svg?branch=master)](https://coveralls.io/github/joonhocho/auth0-react-native?branch=master)
+[![npm version](https://badge.fury.io/js/auth0-react-native.svg)](https://badge.fury.io/js/auth0-react-native)
+[![Dependency Status](https://david-dm.org/joonhocho/auth0-react-native.svg)](https://david-dm.org/joonhocho/auth0-react-native)
+[![License](http://img.shields.io/:license-mit-blue.svg)](http://doge.mit-license.org)
+
 React Native (possibly Node.js) port of [auth0/auth0.js](https://github.com/auth0/auth0.js).
 
 
